@@ -7,7 +7,7 @@ from app.db.database import Base
 
 class RoleEnum(str, enum.Enum):
     admin = "admin"
-    member = "member"
+    employee = "employee"
 
 class ProjectStatusEnum(str, enum.Enum):
     active = "active"
@@ -31,7 +31,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     full_name = Column(String(100), nullable=True)
     hashed_password = Column(String, nullable=False)
-    role = Column(Enum(RoleEnum), default=RoleEnum.member, nullable=False)
+    role = Column(Enum(RoleEnum), default=RoleEnum.employee, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     otp_code = Column(String(6), nullable=True)
@@ -56,7 +56,7 @@ class ProjectMember(Base):
     __tablename__ = "project_members"
     project_id = Column(String(36), ForeignKey("projects.id"), primary_key=True)
     user_id = Column(String(36), ForeignKey("users.id"), primary_key=True)
-    role = Column(Enum(RoleEnum), default=RoleEnum.member)
+    role = Column(Enum(RoleEnum), default=RoleEnum.employee)
     joined_at = Column(DateTime, default=datetime.utcnow)
     
     project = relationship("Project", back_populates="members")

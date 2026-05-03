@@ -110,7 +110,7 @@ class ProjectWithRoleResponse(ProjectResponse):
 
 class ProjectMemberAdd(BaseModel):
     user_id: str
-    role: RoleEnum = RoleEnum.member
+    role: RoleEnum = RoleEnum.employee
 
 class ProjectMemberResponse(BaseModel):
     project_id: str

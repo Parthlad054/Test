@@ -6,7 +6,14 @@ from app.services import auth_service
 from jose import jwt, JWTError
 from app.core.config import settings
 from app.models.models import User
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import create_access_token, create_refresh_token, get_current_admin
+from pydantic import BaseModel
+
+class PromoteUserRequest(BaseModel):
+    email: str
+
+class DemoteUserRequest(BaseModel):
+    email: str
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -59,3 +66,22 @@ def verify_otp(body: VerifyOTPRequest, db: Session = Depends(get_db)):
 def reset_password(body: ResetPasswordWithOTPRequest, db: Session = Depends(get_db)):
     auth_service.reset_password_with_otp(body.email, body.otp, body.new_password, db)
     return APIResponse(status_code=200, message="Password reset successfully.", data={})
+
+# Admin routes
+@router.post("/admin/promote", response_model=APIResponse[dict])
+def promote_user_to_admin(
+    body: PromoteUserRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    auth_service.promote_to_admin(body.email, db, current_admin.email)
+    return APIResponse(status_code=200, message=f"User {body.email} promoted to admin successfully.", data={})
+
+@router.post("/admin/demote", response_model=APIResponse[dict])
+def demote_user_from_admin(
+    body: DemoteUserRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    auth_service.demote_from_admin(body.email, db, current_admin.email)
+    return APIResponse(status_code=200, message=f"User {body.email} demoted from admin successfully.", data={})

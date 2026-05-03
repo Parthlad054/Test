@@ -27,7 +27,7 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
         email=payload.email,
         full_name=payload.full_name,
         hashed_password=get_password_hash(payload.password),
-        role=RoleEnum.admin if first_user else RoleEnum.member,
+        role=RoleEnum.admin if first_user else RoleEnum.employee,
         is_active=True,
     )
     db.add(user)
