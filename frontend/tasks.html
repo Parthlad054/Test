@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - Team Task Manager</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-inner">
+            <div class="brand">Task Manager</div>
+            <input class="menu-toggle" id="menu-toggle" type="checkbox">
+            <label for="menu-toggle" class="hamburger">Menu</label>
+            <nav class="nav-center">
+                <a class="nav-link" href="dashboard.html">Dashboard</a>
+                <a class="nav-link" href="projects.html">Projects</a>
+                <a class="nav-link" href="tasks.html">Tasks</a>
+            </nav>
+            <div class="nav-right">
+                <div class="user-menu" tabindex="0">
+                    <button class="user-trigger">
+                        <span data-user-avatar></span>
+                        <span data-user-name>User</span>
+                    </button>
+                    <div class="user-dropdown">
+                        <a href="dashboard.html">My Profile</a>
+                        <button type="button" data-logout>Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>Tasks</h1>
+
+        <section class="card" style="margin-bottom:12px">
+            <div class="toolbar">
+                <select class="select" id="project-select" style="max-width:220px"></select>
+                <select class="select" id="filter-status" style="max-width:180px">
+                    <option value="">All statuses</option>
+                    <option value="todo">Todo</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="in_review">In Review</option>
+                    <option value="done">Done</option>
+                </select>
+                <select class="select" id="filter-priority" style="max-width:180px">
+                    <option value="">All priorities</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                </select>
+                <select class="select" id="filter-assignee" style="max-width:220px">
+                    <option value="">All assignees</option>
+                </select>
+                <button class="button secondary" id="apply-filters" type="button" style="max-width:120px">Apply</button>
+                <button class="button secondary" id="clear-filters" type="button" style="max-width:120px">Clear</button>
+                <button class="button" id="toggle-add-task" type="button" style="max-width:140px">Add Task</button>
+            </div>
+
+            <form id="add-task-form" style="display:none;margin-top:12px">
+                <div class="grid-2">
+                    <div class="field"><label for="task-title">Title</label><input class="input" id="task-title" minlength="3" maxlength="200" required></div>
+                    <div class="field"><label for="task-priority">Priority</label><select class="select" id="task-priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></div>
+                </div>
+                <div class="grid-2">
+                    <div class="field"><label for="task-assignee">Assignee</label><select class="select" id="task-assignee"><option value="">Unassigned</option></select></div>
+                    <div class="field"><label for="task-due-date">Due Date</label><input class="input" id="task-due-date" type="date"></div>
+                </div>
+                <div class="field"><label for="task-description">Description</label><textarea class="textarea" id="task-description"></textarea></div>
+                <button class="button mobile-full" id="add-task-submit" type="submit"><span>Create task</span><span class="spinner"></span></button>
+            </form>
+        </section>
+
+        <section class="kanban">
+            <article class="kanban-column"><h3>Todo</h3><div id="col-todo" class="kanban-list"></div></article>
+            <article class="kanban-column"><h3>In Progress</h3><div id="col-in_progress" class="kanban-list"></div></article>
+            <article class="kanban-column"><h3>In Review</h3><div id="col-in_review" class="kanban-list"></div></article>
+            <article class="kanban-column"><h3>Done</h3><div id="col-done" class="kanban-list"></div></article>
+        </section>
+    </main>
+
+    <script src="static/js/api.js"></script>
+    <script src="static/js/app.js"></script>
+    <script src="static/js/tasks.js"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - Team Task Manager</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-inner">
+            <div class="brand">Task Manager</div>
+            <input class="menu-toggle" id="menu-toggle" type="checkbox">
+            <label for="menu-toggle" class="hamburger">Menu</label>
+            <nav class="nav-center">
+                <a class="nav-link" href="dashboard.html">Dashboard</a>
+                <a class="nav-link" href="projects.html">Projects</a>
+                <a class="nav-link" href="tasks.html">Tasks</a>
+            </nav>
+            <div class="nav-right">
+                <div class="user-menu" tabindex="0">
+                    <button class="user-trigger">
+                        <span data-user-avatar></span>
+                        <span data-user-name>User</span>
+                    </button>
+                    <div class="user-dropdown">
+                        <a href="dashboard.html">My Profile</a>
+                        <button type="button" data-logout>Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <h1>Projects</h1>
+            <button class="button mobile-full" id="open-create-project" type="button">Create Project</button>
+        </div>
+        <div id="projects-list" style="margin-top:12px"></div>
+    </main>
+
+    <div id="create-project-modal" class="modal" aria-hidden="true">
+        <div class="card modal-card">
+            <h2 style="margin-bottom:10px">Create Project</h2>
+            <form id="create-project-form">
+                <div class="field">
+                    <label for="project-name">Project Name</label>
+                    <input class="input" id="project-name" minlength="3" maxlength="100" required>
+                    <small class="field-error" id="project-name-error"></small>
+                </div>
+                <div class="field">
+                    <label for="project-description">Description</label>
+                    <textarea class="textarea" id="project-description"></textarea>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="button secondary mobile-full" id="close-create-project">Cancel</button>
+                    <button type="submit" class="button mobile-full" id="submit-create-project">
+                        <span>Create</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="static/js/api.js"></script>
+    <script src="static/js/app.js"></script>
+    <script src="static/js/projects.js"></script>
+</body>
+</html>

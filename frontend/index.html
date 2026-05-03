@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth - Team Task Manager</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <main class="auth-wrap">
+        <section class="card auth-card">
+            <h1 style="font-size:22px">Team Task Manager</h1>
+            <p style="color:var(--gray-600);margin-top:4px">Sign in to continue</p>
+
+            <div class="tabs">
+                <button id="tab-login" class="tab active" type="button">Login</button>
+                <button id="tab-signup" class="tab" type="button">Signup</button>
+            </div>
+
+            <form id="login-form">
+                <div class="field" id="login-email-field">
+                    <label for="login-email">Email</label>
+                    <input class="input" type="email" id="login-email" maxlength="255" required>
+                    <small class="field-error" id="login-email-error"></small>
+                </div>
+                <div class="field" id="login-password-field">
+                    <label for="login-password">Password</label>
+                    <input class="input" type="password" id="login-password" required>
+                    <small class="field-error" id="login-password-error"></small>
+                </div>
+                <div style="text-align: right; margin-bottom: 16px;">
+                    <a href="forgot-password.html" style="font-size: 14px; color: var(--primary);">Forgot Password?</a>
+                </div>
+                <button type="submit" id="login-submit" class="button mobile-full">
+                    <span>Login</span>
+                    <span class="spinner" aria-hidden="true"></span>
+                </button>
+                <small class="field-error" id="login-form-error"></small>
+            </form>
+
+            <form id="signup-form" style="display:none;">
+                <div class="field" id="signup-name-field">
+                    <label for="signup-name">Full Name</label>
+                    <input class="input" type="text" id="signup-name" minlength="2" maxlength="100" required>
+                    <small class="field-error" id="signup-name-error"></small>
+                </div>
+                <div class="field" id="signup-email-field">
+                    <label for="signup-email">Email</label>
+                    <input class="input" type="email" id="signup-email" maxlength="255" required>
+                    <small class="field-error" id="signup-email-error"></small>
+                </div>
+                <div class="field" id="signup-password-field">
+                    <label for="signup-password">Password</label>
+                    <input class="input" type="password" id="signup-password" required>
+                    <small class="field-error" id="signup-password-error"></small>
+                </div>
+                <button type="submit" id="signup-submit" class="button mobile-full">
+                    <span>Signup</span>
+                    <span class="spinner" aria-hidden="true"></span>
+                </button>
+                <small class="field-error" id="signup-form-error"></small>
+            </form>
+        </section>
+    </main>
+
+    <script src="static/js/api.js"></script>
+    <script src="static/js/app.js"></script>
+    <script src="static/js/auth.js"></script>
+</body>
+</html>

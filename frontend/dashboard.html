@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Team Task Manager</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-inner">
+            <div class="brand">Task Manager</div>
+            <input class="menu-toggle" id="menu-toggle" type="checkbox">
+            <label for="menu-toggle" class="hamburger">Menu</label>
+            <nav class="nav-center">
+                <a class="nav-link" href="dashboard.html">Dashboard</a>
+                <a class="nav-link" href="projects.html">Projects</a>
+                <a class="nav-link" href="tasks.html">Tasks</a>
+            </nav>
+            <div class="nav-right">
+                <div class="user-menu" tabindex="0">
+                    <button class="user-trigger">
+                        <span data-user-avatar></span>
+                        <span data-user-name>User</span>
+                    </button>
+                    <div class="user-dropdown">
+                        <a href="dashboard.html">My Profile</a>
+                        <button type="button" data-logout>Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>Dashboard</h1>
+
+        <section class="stats-grid">
+            <article class="card"><div>My Open Tasks</div><div id="stat-open" class="stat-value">0</div></article>
+            <article class="card"><div>Overdue Tasks</div><div id="stat-overdue" class="stat-value">0</div></article>
+            <article class="card"><div>Done This Week</div><div id="stat-done-week" class="stat-value stat-success">0</div></article>
+            <article class="card"><div>Total Projects</div><div id="stat-projects" class="stat-value">0</div></article>
+        </section>
+
+        <section class="grid-2">
+            <article class="card">
+                <h2 style="margin-bottom:10px">My Tasks</h2>
+                <div id="my-tasks-list"></div>
+            </article>
+
+            <article class="card">
+                <h2 style="margin-bottom:10px">My Projects</h2>
+                <div id="my-projects-list"></div>
+                <h3 style="margin:14px 0 10px">Quick Add Task</h3>
+                <form id="quick-add-form">
+                    <div class="field"><select class="select" id="quick-project" required><option value="">Select project</option></select></div>
+                    <div class="field"><input class="input" id="quick-title" minlength="3" maxlength="200" placeholder="Task title" required></div>
+                    <div class="field"><input class="input" id="quick-due-date" type="date"></div>
+                    <button class="button mobile-full" id="quick-submit" type="submit"><span>Add task</span><span class="spinner"></span></button>
+                </form>
+            </article>
+        </section>
+
+        <section class="grid-2" style="margin-top:16px">
+            <article class="card">
+                <h2 style="margin-bottom:10px">Overdue Tasks</h2>
+                <div id="overdue-list"></div>
+            </article>
+            <article class="card" id="admin-panel">
+                <h2 style="margin-bottom:10px">Team Summary</h2>
+                <div id="team-summary"></div>
+                <h3 style="margin:14px 0 10px">All Overdue Tasks</h3>
+                <div id="all-overdue-list"></div>
+            </article>
+        </section>
+    </main>
+
+    <script src="static/js/api.js"></script>
+    <script src="static/js/app.js"></script>
+    <script src="static/js/dashboard.js"></script>
+</body>
+</html>
