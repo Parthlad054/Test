@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.dependencies import get_current_user
@@ -32,10 +32,12 @@ def create_project(
 
 @router.get("", response_model=APIResponse[List[ProjectWithRoleResponse]])
 def list_projects(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    projects = project_service.list_projects_for_user(db, current_user)
+    projects = project_service.list_projects_for_user(db, current_user, skip=skip, limit=limit)
     return APIResponse(status_code=200, message="Projects retrieved", data=projects)
 
 
@@ -60,14 +62,24 @@ def update_project(
     return APIResponse(status_code=200, message="Project updated", data=project)
 
 
-@router.delete("/{project_id}", response_model=APIResponse[ProjectResponse])
-def delete_project(
+@router.patch("/{project_id}/archive", response_model=APIResponse[ProjectResponse])
+def archive_project(
     project_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     project = project_service.archive_project(project_id, db, current_user)
     return APIResponse(status_code=200, message="Project archived", data=project)
+
+
+@router.patch("/{project_id}/restore", response_model=APIResponse[ProjectResponse])
+def restore_project(
+    project_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = project_service.restore_project(project_id, db, current_user)
+    return APIResponse(status_code=200, message="Project restored", data=project)
 
 
 @router.post("/{project_id}/members", response_model=APIResponse[ProjectMemberResponse])

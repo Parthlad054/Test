@@ -77,15 +77,17 @@ def create_project(project_in: ProjectCreate, db: Session, current_user: User) -
     return _attach_project_meta(db, new_project, RoleEnum.admin)
 
 
-def list_projects_for_user(db: Session, current_user: User) -> List[Project]:
+def list_projects_for_user(db: Session, current_user: User, skip: int = 0, limit: int = 50) -> List[Project]:
     if _is_global_admin(current_user):
-        projects = db.query(Project).all()
+        projects = db.query(Project).offset(skip).limit(limit).all()
         return [_attach_project_meta(db, p, RoleEnum.admin) for p in projects]
 
     rows = (
         db.query(Project, ProjectMember.role)
         .join(ProjectMember, Project.id == ProjectMember.project_id)
         .filter(ProjectMember.user_id == current_user.id)
+        .offset(skip)
+        .limit(limit)
         .all()
     )
     projects: List[Project] = []
@@ -171,6 +173,20 @@ def archive_project(project_id: str, db: Session, current_user: User) -> Project
         )
 
     project.status = ProjectStatusEnum.archived
+    db.commit()
+    db.refresh(project)
+    return _attach_project_meta(db, project)
+
+
+def restore_project(project_id: str, db: Session, current_user: User) -> Project:
+    if not _is_global_admin(current_user):
+        raise HTTPException(status_code=403, detail="Only global admins can restore projects")
+
+    project = _get_project_or_404(db, project_id)
+    if project.status == ProjectStatusEnum.active:
+        raise HTTPException(status_code=400, detail="Project is already active")
+
+    project.status = ProjectStatusEnum.active
     db.commit()
     db.refresh(project)
     return _attach_project_meta(db, project)

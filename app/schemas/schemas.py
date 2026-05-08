@@ -76,8 +76,14 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class UserListResponse(BaseModel):
+    users: List[UserResponse]
+    total: int
+
+
 class AuthTokens(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     user: UserResponse
 
@@ -159,7 +165,6 @@ class TaskStatusUpdate(BaseModel):
 
 class TaskAssignUpdate(BaseModel):
     assigned_to: Optional[str] = None
-    assigned_to_id: Optional[str] = None
 
 class TaskUserMiniResponse(BaseModel):
     id: str
@@ -169,6 +174,7 @@ class TaskStatusLogResponse(BaseModel):
     old_status: TaskStatus
     new_status: TaskStatus
     changed_by: str
+    changed_by_name: Optional[str] = None
     changed_at: datetime
 
 class TaskResponse(BaseModel):
@@ -215,8 +221,8 @@ class DashboardTaskItem(BaseModel):
     description: Optional[str]
     project_id: str
     project_name: str
-    created_by: int
-    assigned_to: Optional[int]
+    created_by: str
+    assigned_to: Optional[str]
     status: TaskStatus
     priority: TaskPriority
     due_date: Optional[date]

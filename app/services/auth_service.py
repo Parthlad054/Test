@@ -35,7 +35,8 @@ def authenticate_user(user_in: UserLogin, db: Session) -> User:
 
 def create_auth_tokens(user: User) -> AuthTokens:
     access_token = create_access_token(data={"email": user.email, "sub": str(user.id), "role": getattr(user.role, "value", user.role)})
-    return AuthTokens(access_token=access_token, token_type="bearer", user=user)
+    refresh_token = create_refresh_token(data={"email": user.email, "sub": str(user.id)})
+    return AuthTokens(access_token=access_token, refresh_token=refresh_token, token_type="bearer", user=user)
 
 def login_user(user_in: UserLogin, db: Session) -> Token:
     user = authenticate_user(user_in, db)

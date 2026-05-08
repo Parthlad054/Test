@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-from sqlalchemy import and_, func
+from sqlalchemy import and_, case, func
 from sqlalchemy.orm import Session
 from app.models.models import (
     Task,
@@ -110,26 +110,30 @@ def get_dashboard_v1(db: Session, current_user: User) -> dict:
         (Task.created_by == current_user.id) | (Task.assigned_to == current_user.id)
     ).group_by(Task.project_id).order_by(func.max(Task.updated_at).desc()).limit(5).all()
 
+    project_ids = [row.project_id for row in recent_project_rows]
+    projects = db.query(Project).filter(Project.id.in_(project_ids)).all()
+    project_map = {project.id: project for project in projects}
+
+    counts = db.query(
+        Task.project_id,
+        func.count(Task.id).label("task_count"),
+        func.sum(case((Task.status != TaskStatus.done, 1), else_=0)).label("open_task_count"),
+        func.sum(case((Task.assigned_to == current_user.id, 1), else_=0)).label("my_task_count"),
+    ).filter(Task.project_id.in_(project_ids)).group_by(Task.project_id).all() if project_ids else []
+    counts_map = {row.project_id: row for row in counts}
+
     recent_projects = []
     for row in recent_project_rows:
-        project = db.query(Project).filter(Project.id == row.project_id).first()
+        project = project_map.get(row.project_id)
         if not project:
             continue
-        task_count = db.query(func.count(Task.id)).filter(Task.project_id == project.id).scalar() or 0
-        open_task_count = db.query(func.count(Task.id)).filter(
-            Task.project_id == project.id,
-            Task.status != TaskStatus.done
-        ).scalar() or 0
-        my_task_count = db.query(func.count(Task.id)).filter(
-            Task.project_id == project.id,
-            Task.assigned_to == current_user.id
-        ).scalar() or 0
+        count_row = counts_map.get(project.id)
         recent_projects.append({
             "id": project.id,
             "name": project.name,
-            "task_count": int(task_count),
-            "open_task_count": int(open_task_count),
-            "my_task_count": int(my_task_count),
+            "task_count": int(count_row.task_count) if count_row else 0,
+            "open_task_count": int(count_row.open_task_count) if count_row else 0,
+            "my_task_count": int(count_row.my_task_count) if count_row else 0,
         })
 
     payload = {

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.dependencies import get_current_user
 from app.models.models import User, TaskStatus, TaskPriority
-from app.schemas.schemas import APIResponse, TaskCreate, TaskResponse, TaskDetailResponse, TaskUpdate, TaskStatusUpdate
+from app.schemas.schemas import APIResponse, TaskCreate, TaskResponse, TaskDetailResponse, TaskStatusLogResponse, TaskUpdate, TaskStatusUpdate
 from app.services import task_service
 
 
@@ -28,10 +28,12 @@ def list_project_tasks(
     status: Optional[TaskStatus] = Query(None),
     priority: Optional[TaskPriority] = Query(None),
     assigned_to: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    tasks = task_service.list_project_tasks(project_id, db, current_user, status, priority, assigned_to)
+    tasks = task_service.list_project_tasks(project_id, db, current_user, status, priority, assigned_to, skip=skip, limit=limit)
     return APIResponse(status_code=200, message="Tasks retrieved", data=tasks)
 
 
@@ -75,3 +77,13 @@ def patch_task_status(
 ):
     task = task_service.patch_task_status(task_id, payload, db, current_user)
     return APIResponse(status_code=200, message="Task status updated", data=task)
+
+
+@router.get("/tasks/{task_id}/history", response_model=APIResponse[List[TaskStatusLogResponse]])
+def get_task_history(
+    task_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    history = task_service.get_task_history(task_id, db, current_user)
+    return APIResponse(status_code=200, message="Task history retrieved", data=history)

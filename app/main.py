@@ -6,8 +6,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 
 from app.routes import auth_v1, projects_v1, tasks_v1, dashboard_v1
+from app.routes.users_v1 import router as users_v1
 from app.db.database import engine, Base, SessionLocal
 from app.models.models import User, RoleEnum
+from app.core.config import settings
 from app.core.security import get_password_hash
 
 # Create tables (for production use alembic, we use metadata.create_all for simplicity)
@@ -16,22 +18,36 @@ print("Creating tables...")
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Team Task Manager API")
 
+def get_allowed_origins(origins: str) -> list[str]:
+    if not origins:
+        return ["*"]
+    return [origin.strip() for origin in origins.split(",") if origin.strip()]
+
 @app.on_event("startup")
 def startup_event():
     try:
         db = SessionLocal()
-        existing_admin = db.query(User).filter(User.email == "parthlad4125@gmail.com").first()
+        admin_email = settings.ADMIN_EMAIL
+        admin_password = settings.ADMIN_PASSWORD
+        admin_full_name = settings.ADMIN_FULL_NAME or "Admin User"
+
+        if not admin_email or not admin_password:
+            logging.warning("ADMIN_EMAIL or ADMIN_PASSWORD not configured; skipping admin user seeding")
+            db.close()
+            return
+
+        existing_admin = db.query(User).filter(User.email == admin_email).first()
         if not existing_admin:
             admin_user = User(
-                email="parthlad4125@gmail.com",
-                full_name="Parth Lad",
-                hashed_password=get_password_hash("Admin@123"),
+                email=admin_email,
+                full_name=admin_full_name,
+                hashed_password=get_password_hash(admin_password),
                 role=RoleEnum.admin,
                 is_active=True
             )
             db.add(admin_user)
             db.commit()
-            logging.info("Admin user seeded: parthlad4125@gmail.com")
+            logging.info(f"Admin user seeded: {admin_email}")
         db.close()
     except Exception as e:
         logging.error(f"Error seeding admin user: {e}")
@@ -52,7 +68,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For production, change to specific origins
+    allow_origins=get_allowed_origins(settings.ALLOWED_ORIGINS),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,6 +78,7 @@ app.include_router(auth_v1.router)
 app.include_router(projects_v1.router)
 app.include_router(tasks_v1.router)
 app.include_router(dashboard_v1.router)
+app.include_router(users_v1)
 
 @app.get("/")
 def read_root():

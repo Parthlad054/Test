@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.database import get_db
 from app.models.models import User, RoleEnum
+from app.schemas.schemas import TokenRefresh
 
 security = HTTPBearer()
 
@@ -65,6 +66,25 @@ def get_current_user(
     token = credentials.credentials
     payload = verify_token(token)
     if payload.get("type") != "access":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing subject")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive or missing user")
+    return user
+
+
+def get_current_user_from_refresh_token(
+    token_refresh: TokenRefresh = Depends(),
+    db: Session = Depends(get_db),
+) -> User:
+    token = token_refresh.refresh_token
+    payload = verify_token(token)
+    if payload.get("type") != "refresh":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
 
     user_id = payload.get("sub")

@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.models import Task, TaskStatusLog, ProjectMember, RoleEnum, User, TaskStatus, TaskPriority
-from app.schemas.schemas import TaskCreate, TaskStatusUpdate, TaskUpdate, TaskAssignUpdate
+from app.schemas.schemas import TaskCreate, TaskStatusLogResponse, TaskStatusUpdate, TaskUpdate
 
 
 def _is_global_admin(user: User) -> bool:
@@ -41,9 +41,11 @@ def _validate_assignee_membership(db: Session, project_id: str, assigned_to: Opt
         raise HTTPException(status_code=400, detail="assigned_to must be a member of the project")
 
 
-def _serialize_task(db: Session, task: Task):
-    assignee = db.query(User).filter(User.id == task.assigned_to).first() if task.assigned_to else None
-    creator = db.query(User).filter(User.id == task.created_by).first()
+def _serialize_task(db: Session, task: Task, assignee: Optional[User] = None, creator: Optional[User] = None):
+    if assignee is None and task.assigned_to:
+        assignee = db.query(User).filter(User.id == task.assigned_to).first()
+    if creator is None:
+        creator = db.query(User).filter(User.id == task.created_by).first()
     today = date.today()
     is_overdue = bool(task.due_date and task.due_date < today and task.status != TaskStatus.done)
     days_until_due = (task.due_date - today).days if task.due_date else None
@@ -55,9 +57,9 @@ def _serialize_task(db: Session, task: Task):
 
 
 def _serialize_task_detail(db: Session, task: Task):
-    task = _serialize_task(db, task)
     assignee = db.query(User).filter(User.id == task.assigned_to).first() if task.assigned_to else None
     creator = db.query(User).filter(User.id == task.created_by).first()
+    task = _serialize_task(db, task, assignee=assignee, creator=creator)
     setattr(task, "assignee", {"id": assignee.id, "email": assignee.email} if assignee else None)
     setattr(task, "creator", {"id": creator.id, "email": creator.email} if creator else None)
     return task
@@ -92,6 +94,8 @@ def list_project_tasks(
     status: Optional[TaskStatus] = None,
     priority: Optional[TaskPriority] = None,
     assigned_to: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
 ):
     _require_project_member(db, project_id, current_user)
     query = db.query(Task).filter(Task.project_id == project_id)
@@ -101,7 +105,7 @@ def list_project_tasks(
         query = query.filter(Task.priority == priority)
     if assigned_to:
         query = query.filter(Task.assigned_to == assigned_to)
-    tasks = query.order_by(Task.created_at.desc()).all()
+    tasks = query.order_by(Task.created_at.desc()).offset(skip).limit(limit).all()
     return [_serialize_task(db, task) for task in tasks]
 
 
@@ -109,6 +113,24 @@ def get_task_detail(task_id: str, db: Session, current_user: User):
     task = _require_task_or_404(db, task_id)
     _require_project_member(db, task.project_id, current_user)
     return _serialize_task_detail(db, task)
+
+
+def get_task_history(task_id: str, db: Session, current_user: User) -> List[TaskStatusLogResponse]:
+    task = _require_task_or_404(db, task_id)
+    _require_project_member(db, task.project_id, current_user)
+
+    history_rows = db.query(TaskStatusLog).filter(TaskStatusLog.task_id == task_id).order_by(TaskStatusLog.changed_at.asc()).all()
+    history = []
+    for entry in history_rows:
+        changed_by_user = db.query(User).filter(User.id == entry.changed_by).first()
+        history.append(TaskStatusLogResponse(
+            old_status=entry.old_status,
+            new_status=entry.new_status,
+            changed_by=entry.changed_by,
+            changed_by_name=changed_by_user.email if changed_by_user else None,
+            changed_at=entry.changed_at,
+        ))
+    return history
 
 
 def update_task(task_id: str, payload: TaskUpdate, db: Session, current_user: User):
@@ -179,26 +201,3 @@ def patch_task_status(task_id: str, payload: TaskStatusUpdate, db: Session, curr
 
 
 # Backward compatibility for existing dashboard routes.
-def create_task(task_in: TaskCreate, db: Session, current_user: User):
-    if not task_in.project_id:
-        raise HTTPException(status_code=400, detail="project_id is required")
-    return create_project_task(task_in.project_id, task_in, db, current_user)
-
-
-def get_tasks(db: Session, current_user: User, project_id: Optional[str] = None, user_id: Optional[str] = None):
-    if project_id:
-        return list_project_tasks(project_id, db, current_user, assigned_to=user_id)
-    memberships = db.query(ProjectMember).filter(ProjectMember.user_id == current_user.id).all()
-    all_tasks = []
-    for membership in memberships:
-        all_tasks.extend(list_project_tasks(membership.project_id, db, current_user, assigned_to=user_id))
-    return all_tasks
-
-
-def update_task_status(task_id: str, status_in: TaskStatusUpdate, db: Session, current_user: User):
-    return patch_task_status(task_id, status_in, db, current_user)
-
-
-def assign_task(task_id: str, assign_in: TaskAssignUpdate, db: Session, current_user: User):
-    assignee = assign_in.assigned_to if assign_in.assigned_to is not None else assign_in.assigned_to_id
-    return update_task(task_id, TaskUpdate(assigned_to=assignee), db, current_user)

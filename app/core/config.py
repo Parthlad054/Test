@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     SMTP_PORT: int
     SMTP_TLS: bool
     SMTP_SSL: bool
+    ADMIN_EMAIL: str = ""
+    ADMIN_PASSWORD: str = ""
+    ADMIN_FULL_NAME: str = "Admin User"
+    ALLOWED_ORIGINS: str = "*"
 
     class Config:
         env_file = ".env"
