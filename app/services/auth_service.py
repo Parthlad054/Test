@@ -1,24 +1,23 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.models import User, RoleEnum
-from app.schemas.schemas import UserCreate, UserLogin, Token
+from app.schemas.schemas import UserCreate, UserLogin, Token, AuthTokens
 from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token
 from app.core.email import send_otp_email
 import random, string
 from datetime import datetime, timedelta
 
-def register_user(user_in: UserCreate, db: Session) -> User:
+def register_user(user_in: UserCreate, db: Session, role: RoleEnum = RoleEnum.employee) -> User:
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
     hashed_pass = get_password_hash(user_in.password)
-    # Default role is now employee, not admin
     new_user = User(
         email=user_in.email,
         hashed_password=hashed_pass,
         full_name=user_in.full_name,
-        role=RoleEnum.employee,
+        role=role,
         is_active=True
     )
     db.add(new_user)
@@ -26,11 +25,20 @@ def register_user(user_in: UserCreate, db: Session) -> User:
     db.refresh(new_user)
     return new_user
 
-def login_user(user_in: UserLogin, db: Session) -> Token:
+def authenticate_user(user_in: UserLogin, db: Session) -> User:
     user = db.query(User).filter(User.email == user_in.email).first()
     if not user or not verify_password(user_in.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+    if not user.is_active:
+        raise HTTPException(status_code=401, detail="Inactive user")
+    return user
+
+def create_auth_tokens(user: User) -> AuthTokens:
+    access_token = create_access_token(data={"email": user.email, "sub": str(user.id), "role": getattr(user.role, "value", user.role)})
+    return AuthTokens(access_token=access_token, token_type="bearer", user=user)
+
+def login_user(user_in: UserLogin, db: Session) -> Token:
+    user = authenticate_user(user_in, db)
     access_token = create_access_token(data={"email": user.email, "sub": str(user.id), "role": getattr(user.role, "value", user.role)})
     refresh_token = create_refresh_token(data={"email": user.email, "sub": str(user.id)})
     

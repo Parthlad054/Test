@@ -3,17 +3,11 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.models import User, RoleEnum
 from app.schemas.schemas import APIResponse, UserCreate, UserLogin, UserResponse, AuthTokens
-from app.core.security import get_password_hash, verify_password, create_access_token, get_current_user
+from app.dependencies import get_current_user
+from app.services import auth_service
 
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth-v1"])
-
-
-def _build_auth_response(user: User) -> AuthTokens:
-    access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email, "role": getattr(user.role, "value", user.role)}
-    )
-    return AuthTokens(access_token=access_token, token_type="bearer", user=user)
 
 
 @router.post("/signup", response_model=APIResponse[AuthTokens])
@@ -23,27 +17,18 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email is already registered")
 
     first_user = db.query(User).count() == 0
-    user = User(
-        email=payload.email,
-        full_name=payload.full_name,
-        hashed_password=get_password_hash(payload.password),
-        role=RoleEnum.admin if first_user else RoleEnum.employee,
-        is_active=True,
+    user = auth_service.register_user(
+        payload,
+        db,
+        RoleEnum.admin if first_user else RoleEnum.employee,
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return APIResponse(status_code=200, message="Signup successful", data=_build_auth_response(user))
+    return APIResponse(status_code=200, message="Signup successful", data=auth_service.create_auth_tokens(user))
 
 
 @router.post("/login", response_model=APIResponse[AuthTokens])
 def login(payload: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
-    if not user or not verify_password(payload.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account is inactive")
-    return APIResponse(status_code=200, message="Login successful", data=_build_auth_response(user))
+    user = auth_service.authenticate_user(payload, db)
+    return APIResponse(status_code=200, message="Login successful", data=auth_service.create_auth_tokens(user))
 
 
 @router.get("/me", response_model=APIResponse[UserResponse])

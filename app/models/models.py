@@ -8,6 +8,7 @@ from app.db.database import Base
 class RoleEnum(str, enum.Enum):
     admin = "admin"
     employee = "employee"
+    member = "member"  # backward compatibility
 
 class ProjectStatusEnum(str, enum.Enum):
     active = "active"

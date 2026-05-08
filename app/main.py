@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 
-from app.routes import auth, auth_v1, users, projects, projects_v1, tasks, tasks_v1, dashboard, dashboard_v1
+from app.routes import auth_v1, projects_v1, tasks_v1, dashboard_v1
 from app.db.database import engine, Base, SessionLocal
 from app.models.models import User, RoleEnum
 from app.core.security import get_password_hash
@@ -58,14 +58,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
 app.include_router(auth_v1.router)
-app.include_router(users.router)
-app.include_router(projects.router)
 app.include_router(projects_v1.router)
-app.include_router(tasks.router)
 app.include_router(tasks_v1.router)
-app.include_router(dashboard.router)
 app.include_router(dashboard_v1.router)
 
 @app.get("/")
